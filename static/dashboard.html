@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentPulse — Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: #1e1e2e;
+    --accent: #7c6dfa;
+    --accent2: #fa6d9a;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+    --blue: #60a5fa;
+    --text: #e2e2f0;
+    --muted: #6b6b8a;
+    --card: #13131f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(124,109,250,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,109,250,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,15,0.8);
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #auth-status {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  #auth-status.logged-in { color: var(--green); border-color: rgba(74,222,128,0.3); }
+
+  .main {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 36px 32px;
+  }
+
+  /* Login panel */
+  #login-panel {
+    max-width: 420px;
+    margin: 60px auto;
+  }
+
+  .panel-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.05em;
+  }
+
+  input, select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent);
+  }
+
+  .btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 22px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    width: 100%;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn:active { transform: scale(0.98); }
+  .btn.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn.danger { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .btn.small { padding: 7px 14px; font-size: 0.72rem; width: auto; }
+
+  /* Dashboard */
+  #dashboard { display: none; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-value.green { color: var(--green); }
+  .stat-value.red { color: var(--red); }
+  .stat-value.yellow { color: var(--yellow); }
+
+  /* Actions row */
+  .actions-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .actions-row .btn { width: auto; }
+
+  /* Add agent form inline */
+  #add-form {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    animation: slideDown 0.2s ease;
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  /* Agent cards */
+  .agents-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .agent-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 20px;
+    align-items: center;
+    transition: border-color 0.2s, transform 0.15s;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .agent-card:hover {
+    border-color: rgba(124,109,250,0.4);
+    transform: translateY(-1px);
+  }
+
+  .status-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .status-dot.running { background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,0.5); animation: pulse 1.5s infinite; }
+  .status-dot.stopped { background: var(--muted); }
+  .status-dot.error { background: var(--red); box-shadow: 0 0 8px rgba(248,113,113,0.5); }
+  .status-dot.idle { background: var(--yellow); }
+
+  .agent-info { min-width: 0; }
+
+  .agent-name {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .agent-type {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .agent-summary {
+    font-size: 0.82rem;
+    color: rgba(226,226,240,0.7);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ai-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    background: rgba(124,109,250,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(124,109,250,0.3);
+    border-radius: 4px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+  }
+
+  .status-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+
+  .status-badge.running { background: rgba(74,222,128,0.12); color: var(--green); border: 1px solid rgba(74,222,128,0.3); }
+  .status-badge.stopped { background: rgba(107,107,138,0.12); color: var(--muted); border: 1px solid rgba(107,107,138,0.3); }
+  .status-badge.error { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.3); }
+  .status-badge.idle { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
+
+  .agent-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-family: 'Space Mono', monospace; font-size: 0.8rem; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text);
+    z-index: 999;
+    animation: slideUp 0.25s ease;
+    max-width: 320px;
+  }
+
+  .toast.success { border-color: rgba(74,222,128,0.5); color: var(--green); }
+  .toast.error { border-color: rgba(248,113,113,0.5); color: var(--red); }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .loader {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(124,109,250,0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 700px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+    .agent-card { grid-template-columns: auto 1fr; }
+    .agent-actions { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    AgentPulse
+  </div>
+  <div class="header-right">
+    <span id="auth-status">NOT AUTHENTICATED</span>
+    <button class="btn secondary small" id="logout-btn" style="display:none" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Login -->
+  <div id="login-panel">
+    <div class="panel-title">// authenticate to continue</div>
+    <div class="card">
+      <div class="field">
+        <label>USERNAME</label>
+        <input id="username" type="text" value="admin" placeholder="admin">
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input id="password" type="password" value="password123" placeholder="password">
+      </div>
+      <button class="btn" onclick="login()">Connect →</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard">
+
+    <div class="stats-row" id="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total Agents</div>
+        <div class="stat-value" id="stat-total">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Running</div>
+        <div class="stat-value green" id="stat-running">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Errors</div>
+        <div class="stat-value red" id="stat-errors">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Stopped</div>
+        <div class="stat-value yellow" id="stat-stopped">—</div>
+      </div>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn small" onclick="toggleAddForm()">+ Register Agent</button>
+      <button class="btn secondary small" onclick="loadAgents()">↻ Refresh</button>
+      <span id="loading-indicator" style="display:none"><span class="loader"></span> Loading...</span>
+    </div>
+
+    <!-- Add Agent Form -->
+    <div id="add-form">
+      <div class="panel-title">// register new agent</div>
+      <div class="form-row">
+        <div class="field" style="margin-bottom:0">
+          <label>NAME</label>
+          <input id="new-name" type="text" placeholder="e.g. data-processor-1">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>TYPE</label>
+          <input id="new-type" type="text" placeholder="e.g. NLP, Vision, Search">
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>INITIAL STATUS</label>
+          <select id="new-status">
+            <option value="stopped">stopped</option>
+            <option value="running">running</option>
+            <option value="idle">idle</option>
+          </select>
+        </div>
+        <button class="btn small" onclick="registerAgent()">Register</button>
+      </div>
+    </div>
+
+    <!-- Agents List -->
+    <div class="agents-grid" id="agents-list">
+      <div class="empty-state">
+        <div class="icon">⬡</div>
+        <p>No agents registered yet.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = '';  // same origin
+  let token = localStorage.getItem('agentpulse_token') || '';
+
+  function showToast(msg, type = 'success') {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(API + path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+      }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new Error(err.detail || 'Request failed');
+    }
+    return res.json();
+  }
+
+  async function login() {
+    const u = document.getElementById('username').value;
+    const p = document.getElementById('password').value;
+    try {
+      const data = await fetch(`${API}/auth/login?username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`, { method: 'POST' });
+      if (!data.ok) throw new Error('Invalid credentials');
+      const json = await data.json();
+      token = json.access_token;
+      localStorage.setItem('agentpulse_token', token);
+      onLoggedIn();
+    } catch(e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  function onLoggedIn() {
+    document.getElementById('login-panel').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('auth-status').textContent = '● CONNECTED';
+    document.getElementById('auth-status').classList.add('logged-in');
+    document.getElementById('logout-btn').style.display = 'inline-block';
+    loadAgents();
+  }
+
+  function logout() {
+    token = '';
+    localStorage.removeItem('agentpulse_token');
+    location.reload();
+  }
+
+  function toggleAddForm() {
+    const f = document.getElementById('add-form');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  }
+
+  async function loadAgents() {
+    document.getElementById('loading-indicator').style.display = 'inline-flex';
+    try {
+      const agents = await apiFetch('/agents');
+      renderAgents(agents);
+      updateStats(agents);
+    } catch(e) {
+      showToast(e.message, 'error');
+    } finally {
+      document.getElementById('loading-indicator').style.display = 'none';
+    }
+  }
+
+  function updateStats(agents) {
+    document.getElementById('stat-total').textContent = agents.length;
+    document.getElementById('stat-running').textContent = agents.filter(a => a.status === 'running').length;
+    document.getElementById('stat-errors').textContent = agents.filter(a => a.status === 'error').length;
+    document.getElementById('stat-stopped').textContent = agents.filter(a => a.status === 'stopped' || a.status === 'idle').length;
+  }
+
+  function renderAgents(agents) {
+    const list = document.getElementById('agents-list');
+    if (!agents.length) {
+      list.innerHTML = `<div class="empty-state"><div class="icon">⬡</div><p>No agents registered. Click "+ Register Agent" to get started.</p></div>`;
+      return;
+    }
+    list.innerHTML = agents.map(a => `
+      <div class="agent-card" id="agent-${a.id}">
+        <div class="status-dot ${a.status}"></div>
+        <div class="agent-info">
+          <div class="agent-name">${a.name}</div>
+          <div class="agent-type">${a.type}</div>
+          ${a.health_summary ? `<div class="agent-summary"><span class="ai-badge">AI</span>${a.health_summary}</div>` : ''}
+        </div>
+        <div class="agent-actions">
+          <span class="status-badge ${a.status}">${a.status}</span>
+          <select class="status-select" onchange="updateStatus(${a.id}, this.value)" style="width:auto;padding:6px 10px;font-size:0.78rem;">
+            <option disabled selected>change status</option>
+            <option value="running">running</option>
+            <option value="stopped">stopped</option>
+            <option value="error">error</option>
+            <option value="idle">idle</option>
+          </select>
+          <button class="btn danger small" onclick="deleteAgent(${a.id}, '${a.name}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function registerAgent() {
+    const name = document.getElementById('new-name').value.trim();
+    const type = document.getElementById('new-type').value.trim();
+    const status = document.getElementById('new-status').value;
+    if (!name || !type) return showToast('Name and type are required', 'error');
+    try {
+      await apiFetch('/agents', {
+        method: 'POST',
+        body: JSON.stringify({ name, type, status })
+      });
+      showToast(`Agent '${name}' registered!`);
+      document.getElementById('new-name').value = '';
+      document.getElementById('new-type').value = '';
+      document.getElementById('add-form').style.display = 'none';
+      loadAgents();
+    } catch(e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  async function updateStatus(id, newStatus) {
+    try {
+      await apiFetch(`/agents/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+      showToast(`Status updated to ${newStatus}`);
+      loadAgents();
+    } catch(e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  async function deleteAgent(id, name) {
+    if (!confirm(`Delete agent '${name}'?`)) return;
+    try {
+      await apiFetch(`/agents/${id}`, { method: 'DELETE' });
+      showToast(`'${name}' deleted`);
+      loadAgents();
+    } catch(e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  // Auto-login if token exists
+  if (token) {
+    onLoggedIn();
+  }
+</script>
+</body>
+</html>
