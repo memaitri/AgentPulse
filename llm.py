@@ -6,7 +6,7 @@ load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama3-8b-8192"
+GROQ_MODEL = "llama-3.1-8b-instant"
 
 async def generate_health_summary(agent_name: str, agent_type: str, status: str, recent_logs: list[str]) -> str:
     """Call Groq API to generate a one-line health summary for an agent."""
