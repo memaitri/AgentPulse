@@ -2,6 +2,7 @@
 
 
 A secure REST API to register, monitor, and manage AI agents, with LLM-generated health summaries.
+LIVE AT: https://agentpulse-zuos.onrender.com/
 
 ---
 
