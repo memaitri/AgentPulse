@@ -1,5 +1,5 @@
 # AgentPulse — Mini Agent Monitor API
-### Hapticware Hackathon Submission
+
 
 A secure REST API to register, monitor, and manage AI agents, with LLM-generated health summaries.
 
@@ -68,7 +68,7 @@ uvicorn main:app --reload
 
 ---
 
-## Walkthrough Notes (10-min verbal)
+## Walkthrough Notes 
 
 1. **Project structure** — each file has one responsibility
 2. **Auth flow** — POST /auth/login → JWT → Bearer token in all headers
