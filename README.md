@@ -6,6 +6,7 @@ A secure REST API to register, monitor, and manage AI agents, with LLM-generated
 📖 **API Docs:** https://agentpulse-zuos.onrender.com/docs
 
 ---
+<img width="1912" height="595" alt="image" src="https://github.com/user-attachments/assets/15e22088-15c9-415d-b401-431f52d58881" />
 
 ## Tech Stack
 
