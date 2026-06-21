@@ -94,3 +94,23 @@ uvicorn main:app --reload
 2. Create an API key
 3. Add to `.env` as `GROQ_API_KEY=gsk_...`
 4. Free tier: 14,400 requests/day, no credit card needed
+
+AgentPulse/
+
+├── main.py        # FastAPI app & route definitions
+
+├── auth.py        # JWT auth logic
+
+├── database.py    # DB connection & session handling
+
+├── models.py      # SQLAlchemy models
+
+├── schemas.py     # Pydantic request/response schemas
+
+├── llm.py         # Groq LLM integration
+
+├── static/        # Dashboard frontend
+
+├── render.yaml     # Render deployment config
+
+└── requirements.txt
